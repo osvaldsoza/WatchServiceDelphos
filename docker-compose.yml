@@ -1,0 +1,11 @@
+version: '3.1'
+services:
+  postgres-delphos:
+    container_name: postgres-delphos-api
+    image: postgres:12.2
+    environment:
+      POSTGRES_USER: delphos
+      POSTGRES_PASSWORD: delphos
+      POSTGRES_DB: delphos
+    ports:
+      - "5432:5432"

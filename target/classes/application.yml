@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    password: delphos
+    url: jdbc:postgresql://localhost/delphos?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: delphos
+  jpa:
+    database: POSTGRESQL
+    hibernate:
+      ddl-auto: create
