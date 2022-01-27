@@ -24,7 +24,20 @@ public class ArquivoController {
     private ArquivoRepository arquivoRepository;
 
     @GetMapping
-    public ResponseEntity<?> lerArquivo(){
+    public ResponseEntity<?> monitoraDiretorio(){
+
+       var dados = watchService();
+
+        if(!dados.isEmpty()){
+            return ResponseEntity.ok(dados);
+        }else{
+            return ResponseEntity.noContent().build();
+        }
+    }
+
+    private List<Arquivo> watchService(){
+        List<Arquivo> dados = new ArrayList<>();
+
         try (WatchService service = FileSystems.getDefault().newWatchService()) {
             Map<WatchKey, Path> map = new HashMap<>();
             Path path = Paths.get("files");
@@ -44,21 +57,19 @@ public class ArquivoController {
                     System.out.println(pathDir + ": " + watchEvenKind + ": " + fileName);
 
                     if (String.valueOf(watchEvenKind) == "ENTRY_MODIFY") {
-                        var dados = lerArquivo(pathDir, fileName);
+                        dados = lerArquivo(pathDir, fileName);
 
                         dados.remove(0);
 
                         arquivoRepository.saveAll(dados);
-                        System.out.println(dados);
-                        return  ResponseEntity.ok(dados);
                     }
                 }
             } while (watchKey.reset());
         } catch (Exception e) {
-
             e.printStackTrace();
         }
-            return  ResponseEntity.notFound().build();
+
+        return dados;
     }
 
     private static List<Arquivo> lerArquivo(Path pathDir, Path fileName) throws IOException {
@@ -68,12 +79,12 @@ public class ArquivoController {
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
         String linha = bufferedReader.readLine();
 
-        int i = 0;
+        int index = 0;
 
         while (linha != null) {
             String[] linhaSplitada = linha.split(";");
 
-            armazenaDadosDeUmArquivoEmUmObjeto(dados, i, linhaSplitada);
+            armazenaDadosDeUmArquivoEmUmObjeto(dados, index, linhaSplitada);
 
             linha = bufferedReader.readLine();
         }
