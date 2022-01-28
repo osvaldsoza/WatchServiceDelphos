@@ -21,16 +21,17 @@ public class ArquivoController {
     @Autowired
     private ArquivoRepository arquivoRepository;
 
+    private static final String DIRETORIO_BASE = "files";
+    private static final String DIRETORIO_BACKUP = "backup";
+
     @GetMapping
     public ResponseEntity<?> monitoraDiretorio() {
 
         try (WatchService service = FileSystems.getDefault().newWatchService()) {
             Map<WatchKey, Path> map = new HashMap<>();
-            Path diretorioBase = Paths.get("files");
+            Path diretorioBase = Paths.get(DIRETORIO_BASE);
             map.put(diretorioBase.register(service,
-                    StandardWatchEventKinds.ENTRY_CREATE,
-                    StandardWatchEventKinds.ENTRY_DELETE,
-                    StandardWatchEventKinds.ENTRY_MODIFY), diretorioBase);
+                    StandardWatchEventKinds.ENTRY_CREATE), diretorioBase);
 
             WatchKey watchKey;
 
@@ -41,10 +42,11 @@ public class ArquivoController {
                     WatchEvent.Kind<?> watchEvenKind = event.kind();
                     Path nomeDoArquivo = (Path) event.context();
 
-                    if (String.valueOf(watchEvenKind) == "ENTRY_MODIFY" ||
-                            String.valueOf(watchEvenKind) == "ENTRY_CREATE") {
+                    if (String.valueOf(watchEvenKind) == "ENTRY_CREATE") {
                         List<String> linhasDoArquivo = lerArquivo(nomeDoDiretorio, nomeDoArquivo);
+
                         salvarLinhasDoArquivoNaBase(linhasDoArquivo);
+
                         moveArquivoDeDiretorio(nomeDoDiretorio, nomeDoArquivo);
                     }
                     return ResponseEntity.ok("Salvo com sucesso");
@@ -60,7 +62,7 @@ public class ArquivoController {
         var linhasSalvas = new ArrayList<Arquivo>();
 
         for (String linha : linhas) {
-            var arquivo = new Arquivo();
+            Arquivo arquivo = new Arquivo();
             arquivo.setLinhaDoArquivo(linha);
             linhasSalvas.add(arquivo);
 
@@ -104,7 +106,7 @@ public class ArquivoController {
     }
 
     private File criaNovoDiretorio() {
-        File nomeDoNovoDiretorio = new File("backup");
+        File nomeDoNovoDiretorio = new File(DIRETORIO_BACKUP);
 
         if (!nomeDoNovoDiretorio.exists()) {
             nomeDoNovoDiretorio.mkdir();
