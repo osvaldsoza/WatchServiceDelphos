@@ -1,5 +1,6 @@
 package br.com.osvaldsoza;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/arquivo")
@@ -42,12 +42,16 @@ public class ArquivoController {
                     WatchEvent.Kind<?> watchEvenKind = event.kind();
                     Path nomeDoArquivo = (Path) event.context();
 
+                    long d = (100 * 1024) * 1024;
                     if (String.valueOf(watchEvenKind) == "ENTRY_CREATE") {
-                        List<String> linhasDoArquivo = lerArquivo(nomeDoDiretorio, nomeDoArquivo);
+                        File f = new File(nomeDoDiretorio + "/" + nomeDoArquivo);
 
-                        salvarLinhasDoArquivoNaBase(linhasDoArquivo);
+                        var conteudo = FileUtils.readFileToString(f);
+                        //  List<String> linhasDoArquivo = lerArquivo(nomeDoDiretorio, nomeDoArquivo);
 
-                        moveArquivoDeDiretorio(nomeDoDiretorio, nomeDoArquivo);
+                        salvarConteudoDoArquivoNaBase(conteudo);
+
+                        moveArquivoParaDiretorioDeBackup(nomeDoDiretorio, nomeDoArquivo);
                     }
                     return ResponseEntity.ok("Salvo com sucesso");
                 }
@@ -58,20 +62,22 @@ public class ArquivoController {
         return ResponseEntity.notFound().build();
     }
 
-    private List<Arquivo> salvarLinhasDoArquivoNaBase(List<String> linhas) {
-        var linhasSalvas = new ArrayList<Arquivo>();
-
-        for (String linha : linhas) {
-            Arquivo arquivo = new Arquivo();
-            arquivo.setLinhaDoArquivo(linha);
-            linhasSalvas.add(arquivo);
-
-        }
-        return arquivoRepository.saveAll(linhasSalvas);
+    private void salvarConteudoDoArquivoNaBase(String linha) {
+//        var linhasSalvas = new ArrayList<Arquivo>();
+//
+//        for (String linha : linhas) {
+//
+//            arquivo.setLinhaDoArquivo(linha);
+//            linhasSalvas.add(arquivo);
+//
+//        }
+        Arquivo arquivo = new Arquivo();
+        arquivo.setLinhaDoArquivo(linha);
+        arquivoRepository.save(arquivo);
     }
 
 
-    private void moveArquivoDeDiretorio(Path diretorioOrigem, Path nomeDoArquivo) {
+    private void moveArquivoParaDiretorioDeBackup(Path diretorioOrigem, Path nomeDoArquivo) {
 
         InputStream in;
         OutputStream out;
@@ -116,10 +122,11 @@ public class ArquivoController {
     }
 
     private List<String> lerArquivo(Path nomeDoDiretorio, Path nomeDoArquivo) throws IOException {
-
+        var foo = Files.lines(Paths.get(nomeDoDiretorio + "/" + nomeDoArquivo));
         List<String> linhas = new ArrayList<>();
-
-        try (Stream<String> stream = Files.lines(Paths.get(nomeDoDiretorio + "/" + nomeDoArquivo))) {
+        try {
+            var stream = Files.lines(Paths.get(nomeDoDiretorio + "/" + nomeDoArquivo));
+            // Stream<String> stream = Files.lines(Paths.get(nomeDoDiretorio + "/" + nomeDoArquivo));
             stream.skip(1).forEach(linhas::add);
         } catch (IOException e) {
             e.printStackTrace();
